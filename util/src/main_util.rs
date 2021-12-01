@@ -33,7 +33,7 @@ where
     T2: std::fmt::Display,
 {
     let mut result = None;
-    let input = get_input(day, 2020);
+    let input = get_input(day, 2021);
     let duration = time_duration(|| {
         result = Some(fn_day(input));
     });
