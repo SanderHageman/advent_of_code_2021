@@ -1,3 +1,4 @@
+use nom::combinator::all_consuming;
 use itertools::Itertools;
 use nom::{
   IResult,
@@ -37,11 +38,11 @@ fn parse(input: &str) -> TParsed {
 }
 
 fn try_parse(input :&str) -> IResult<&str, TParsed> {
-  separated_list1(tag("\n"),
+  all_consuming(separated_list1(tag("\n"),
     map_res(
       digit1,
       |s:&str| s.parse()
-  ))(input)
+  )))(input)
 }
 
 #[test]
