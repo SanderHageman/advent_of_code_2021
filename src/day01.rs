@@ -1,11 +1,7 @@
-use nom::combinator::all_consuming;
 use itertools::Itertools;
 use nom::{
-  IResult,
-  bytes::complete::{tag},
-  combinator::map_res,
-  character::complete::digit1,
-  multi::separated_list1
+  character::complete::digit1, character::complete::newline, combinator::all_consuming,
+  combinator::map_res, multi::separated_list1, IResult,
 };
 
 type TParsed = Vec<TParsedSub>;
@@ -26,41 +22,43 @@ fn part_2(input: &TParsed) -> usize {
   count_increases(&input.windows(3).map(|w| w.iter().sum()).collect())
 }
 
-fn count_increases(i : &TParsed) -> usize {
-  i.iter().tuple_windows().map(|(l, r)| if r > l {1} else {0}).sum()
+fn count_increases(i: &TParsed) -> usize {
+  i.iter()
+    .tuple_windows()
+    .map(|(l, r)| if r > l { 1 } else { 0 })
+    .sum()
 }
 
 fn parse(input: &str) -> TParsed {
   match try_parse(input) {
     Ok((_, v)) => v,
-    Err(e) => panic!("error parsing: {:?}", e)
+    Err(e) => panic!("error parsing: {:?}", e),
   }
 }
 
-fn try_parse(input :&str) -> IResult<&str, TParsed> {
-  all_consuming(separated_list1(tag("\n"),
-    map_res(
-      digit1,
-      |s:&str| s.parse()
-  )))(input)
+fn try_parse(input: &str) -> IResult<&str, TParsed> {
+  all_consuming(separated_list1(
+    newline,
+    map_res(digit1, |s: &str| s.parse()),
+  ))(input)
 }
 
 #[test]
 fn show_parse() {
-    let input = parse(EXAMPLE_INPUT);
-    println!("{:?}", input);
+  let input = parse(EXAMPLE_INPUT);
+  println!("{:?}", input);
 }
 
 #[test]
 fn test_example_1() {
-    let input = parse(EXAMPLE_INPUT);
-    assert_eq!(part_1(&input), 7)
+  let input = parse(EXAMPLE_INPUT);
+  assert_eq!(part_1(&input), 7)
 }
 
 #[test]
 fn test_example_2() {
-    let input = parse(EXAMPLE_INPUT);
-    assert_eq!(part_2(&input), 5)
+  let input = parse(EXAMPLE_INPUT);
+  assert_eq!(part_2(&input), 5)
 }
 
 #[cfg(test)]
