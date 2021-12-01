@@ -59,7 +59,7 @@ pub fn print_entry(filter: &Vec<u8>) {
         "Advent".bright_red().bold(),
         "of".bright_white(),
         "Code".bright_green().bold(),
-        "2020".bright_blue()
+        "2021".bright_blue()
     );
 
     if filter.len() > 0 {

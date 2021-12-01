@@ -18,11 +18,15 @@ pub fn day(input: String) -> (usize, usize) {
 }
 
 fn part_1(input: &TParsed) -> usize {
-  input.iter().tuple_windows().map(|(l, r)| if r > l {1} else {0}).sum()
+  count_increases(input)
 }
 
 fn part_2(input: &TParsed) -> usize {
-  0
+  count_increases(&input.windows(3).map(|w| w.iter().sum()).collect())
+}
+
+fn count_increases(i : &TParsed) -> usize {
+  i.iter().tuple_windows().map(|(l, r)| if r > l {1} else {0}).sum()
 }
 
 fn parse(input: &str) -> TParsed {
@@ -55,7 +59,7 @@ fn test_example_1() {
 #[test]
 fn test_example_2() {
     let input = parse(EXAMPLE_INPUT);
-    assert_eq!(part_2(&input), 286)
+    assert_eq!(part_2(&input), 5)
 }
 
 #[cfg(test)]
