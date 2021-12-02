@@ -4,4 +4,5 @@ pub use util::*;
 
 util::main! {
     day 01
+    day 02
 }
