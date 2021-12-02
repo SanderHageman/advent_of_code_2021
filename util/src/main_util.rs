@@ -11,12 +11,11 @@ macro_rules! main {
                     .skip(1)
                     .map(|x| x.parse::<u8>().unwrap())
                     .collect::<Vec<_>>();
-                let filter = if args.len() > 0 { true } else { false };
 
                 main_util::print_entry(&args);
 
                 let duration = main_util::time_duration(||{
-                    $(if !filter || args.contains(&$val){
+                    $(if args.is_empty() || args.contains(&$val){
                             main_util::do_day($val, [<day $val>]::day);
                     })+
                 });
@@ -53,20 +52,15 @@ where
 }
 
 pub fn print_entry(filter: &Vec<u8>) {
-    print!(
+    println!(
         // Thanks Caspar
-        "\t{} {} {} {}",
+        "\t{} {} {} {} {:?}",
         "Advent".bright_red().bold(),
         "of".bright_white(),
         "Code".bright_green().bold(),
-        "2021".bright_blue()
+        "2021".bright_blue(),
+        filter
     );
-
-    if filter.len() > 0 {
-        println!(" {:?}", filter);
-    } else {
-        println!("")
-    }
 }
 
 pub fn print_result<T, T2>(day: usize, result: (T, T2), time: u128)
@@ -118,5 +112,15 @@ fn get_online_input(day: usize, year: usize) -> Result<String> {
     .set("Cookie", &format!("session={}", session_id))
     .call();
 
-    response.into_string()
+    let resp = response.into_string()?;
+    if resp.starts_with(TOO_EARLY) {
+        Err(std::io::Error::new(
+            std::io::ErrorKind::Other,
+            format!("Day {} {} has not started yet", day, year),
+        ))
+    } else {
+        Ok(resp)
+    }
 }
+
+const TOO_EARLY: &str = "Please don't repeatedly request this endpoint before it unlocks!";
