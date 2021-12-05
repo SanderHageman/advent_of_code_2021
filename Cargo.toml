@@ -8,6 +8,7 @@ edition = "2021"
 [dependencies]
 nom = "7.1.0"
 itertools = "0.10.1"
+vek = "0.15.4"
 
 [dependencies.util]
 path = "./util"
