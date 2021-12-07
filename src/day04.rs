@@ -8,28 +8,31 @@ type TParsed = (Vec<usize>, Vec<TParsedSub>);
 type TParsedSub = Vec<Vec<usize>>;
 
 pub fn day(input: String) -> (usize, usize) {
-  let parsed_input = parse(&input);
+  let parsed_input = prep_input(&parse(&input));
   let p1 = part_1(&parsed_input);
   let p2 = part_2(&parsed_input);
   (p1, p2)
 }
 
-fn part_1(input: &TParsed) -> usize {
+fn prep_input(input: &TParsed) -> Vec<(usize, usize)> {
   let (ns, i) = input;
-  let j = i
-    .iter()
-    .map(|b| final_score(ns, b))
-    .min_by(|(x1, _), (x2, _)| x1.cmp(x2));
-  j.unwrap().1
+  i.iter().map(|b| final_score(ns, b)).collect()
 }
 
-fn part_2(input: &TParsed) -> usize {
-  let (ns, i) = input;
-  let j = i
+fn part_1(input: &Vec<(usize, usize)>) -> usize {
+  input
     .iter()
-    .map(|b| final_score(ns, b))
-    .max_by(|(x1, _), (x2, _)| x1.cmp(x2));
-  j.unwrap().1
+    .min_by(|(x1, _), (x2, _)| x1.cmp(x2))
+    .unwrap()
+    .1
+}
+
+fn part_2(input: &Vec<(usize, usize)>) -> usize {
+  input
+    .iter()
+    .max_by(|(x1, _), (x2, _)| x1.cmp(x2))
+    .unwrap()
+    .1
 }
 
 fn final_score(xs: &Vec<usize>, board: &TParsedSub) -> (usize, usize) {
@@ -109,13 +112,13 @@ fn show_parse_4() {
 
 #[test]
 fn test_example_1_4() {
-  let input = parse(EXAMPLE_INPUT);
+  let input = prep_input(&parse(EXAMPLE_INPUT));
   assert_eq!(part_1(&input), 4512)
 }
 
 #[test]
 fn test_example_2_4() {
-  let input = parse(EXAMPLE_INPUT);
+  let input = prep_input(&parse(EXAMPLE_INPUT));
   assert_eq!(part_2(&input), 1924)
 }
 
