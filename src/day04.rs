@@ -36,24 +36,26 @@ fn part_2(input: &Vec<(usize, usize)>) -> usize {
 }
 
 fn final_score(xs: &Vec<usize>, board: &TParsedSub) -> (usize, usize) {
-  let mut ys = Vec::new();
-  for x in xs {
-    ys.push(*x);
-    for ln in board {
-      if ln.iter().all(|y| ys.contains(y)) {
-        let res: usize = board.concat().iter().filter(|y| !ys.contains(y)).sum();
-        return (ys.len(), res * x);
-      }
-    }
-    for ln in transpose(board.to_owned()) {
-      if ln.iter().all(|y| ys.contains(y)) {
-        let res: usize = board.concat().iter().filter(|y| !ys.contains(y)).sum();
-        return (ys.len(), res * x);
-      }
+  let tpsd = transpose(board.to_owned());
+  let mut n = 0;
+
+  for i in 0..xs.len() {
+    if tpsd
+      .iter()
+      .chain(board)
+      .any(|ln| ln.iter().all(|y| xs[0..i].contains(y)))
+    {
+      n = i;
+      break;
     }
   }
 
-  panic!("No score found");
+  let res: usize = board
+    .concat()
+    .iter()
+    .filter(|y| !xs[0..n].contains(y))
+    .sum();
+  (n, res * xs[n - 1])
 }
 
 // https://stackoverflow.com/questions/64498617/how-to-transpose-a-vector-of-vectors-in-rust

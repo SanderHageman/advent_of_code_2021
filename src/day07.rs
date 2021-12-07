@@ -34,14 +34,17 @@ fn part_1(input: &TParsed) -> usize {
 fn part_2(input: &TParsed) -> usize {
   let mean = input.iter().sum::<usize>() as f32 / input.len() as f32;
 
-  let get_res = |m: f32| {
+  let get_res = |m: isize| {
     input
       .iter()
-      .map(|x| (0..=((*x as f32) - m).abs() as usize).sum::<usize>())
+      .map(|x| (0..=((*x as isize) - m).abs() as usize).sum::<usize>())
       .sum()
   };
 
-  min(get_res(mean.floor()), get_res(mean.ceil()))
+  min(
+    get_res(mean.floor() as isize),
+    get_res(mean.ceil() as isize),
+  )
 }
 
 fn parse<'a>(input: &'a str) -> TParsed {

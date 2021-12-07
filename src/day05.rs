@@ -1,9 +1,6 @@
 use nom::bytes::complete::tag;
 use nom::character::complete::digit1;
 use nom::{character::complete::newline, combinator::*, multi::separated_list1, IResult};
-
-use std::collections::HashMap;
-
 use vek::num_traits::signum;
 use vek::vec::Vec2;
 
@@ -19,18 +16,18 @@ pub fn day(input: String) -> (usize, usize) {
 }
 
 fn count_overlapping<'a>(input: &'a TParsed) -> usize {
-  let mut m: HashMap<Vec2<i32>, usize> = HashMap::new();
+  let mut m = vec![vec![0; 1000]; 1000];
   for (from, to) in input {
     let dir = (to - from).map(|x| signum(x));
     let mut s = from.to_owned();
-    *m.entry(s).or_insert(0) += 1;
+    m[s.y as usize][s.x as usize] += 1;
     while s != *to {
       s += dir;
-      *m.entry(s).or_insert(0) += 1;
+      m[s.y as usize][s.x as usize] += 1;
     }
   }
 
-  m.iter().filter(|&(_, n)| *n > 1).count()
+  m.into_iter().flatten().filter(|n| *n > 1).count()
 }
 
 fn part_1(input: &TParsed) -> usize {
