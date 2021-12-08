@@ -10,4 +10,5 @@ util::main! {
     day 05
     day 06
     day 07
+    day 08
 }
