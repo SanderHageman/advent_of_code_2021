@@ -46,7 +46,7 @@ fn part_2(input: &TParsed) -> usize {
   let mut res = input
     .iter()
     .filter(not_corrupt)
-    .map(|s| s.chars().fold(0, score))
+    .map(|s| s.chars().rev().fold(0, score))
     .collect::<Vec<usize>>();
 
   res.sort_unstable();
