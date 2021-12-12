@@ -6,7 +6,7 @@ use nom::{combinator::*, multi::separated_list1, IResult};
 use std::collections::HashMap;
 use std::collections::HashSet;
 
-type TParsed<'a> = HashMap<&'a str, HashSet<&'a str>>;
+type TParsed = (usize, usize, Vec<Vec<usize>>, Vec<bool>);
 
 pub fn day(input: String) -> (usize, usize) {
   let parsed_input = parse(&input);
@@ -15,29 +15,22 @@ pub fn day(input: String) -> (usize, usize) {
   (p1, p2)
 }
 
-fn is_small(s: &str) -> bool {
-  s.chars().any(|c| c.is_ascii_lowercase())
-}
-
-fn part_1(input: &TParsed) -> usize {
-  let start = "start";
-  let end = "end";
-
-  let mut visited: HashMap<&str, bool> = input
-    .iter()
-    .filter(|(k, _)| is_small(k))
-    .map(|(k, _)| (*k, false))
-    .collect();
+fn part_1((start, end, map, smalls): &TParsed) -> usize {
+  let mut visited = vec![false; smalls.len()];
 
   fn dfs<'a>(
-    u: &'a str,
-    v: &'a str,
-    current_path: &mut Vec<&'a str>,
-    visited: &mut HashMap<&'a str, bool>,
-    paths: &mut Vec<Vec<&'a str>>,
-    input: &'a TParsed,
+    u: usize,
+    v: usize,
+    current_path: &mut Vec<usize>,
+    visited: &mut Vec<bool>,
+    paths: &mut Vec<Vec<usize>>,
+    input: &Vec<Vec<usize>>,
+    smalls: &Vec<bool>,
+    start_n: usize,
   ) {
-    if is_small(u) {
+    let small = smalls[u];
+
+    if small {
       if visited[u] {
         return;
       } else {
@@ -55,56 +48,42 @@ fn part_1(input: &TParsed) -> usize {
 
     let nexts = input.get(u).expect("Unable to find next paths");
     for next in nexts {
-      dfs(*next, v, current_path, visited, paths, input);
+      dfs(
+        *next,
+        v,
+        current_path,
+        visited,
+        paths,
+        input,
+        smalls,
+        start_n,
+      );
     }
-
     current_path.pop();
 
-    if is_small(u) {
+    if small {
       *visited.get_mut(u).expect("small cave not found") = false;
     }
   }
 
   let mut paths = Vec::new();
 
-  dfs(start, end, &mut Vec::new(), &mut visited, &mut paths, input);
+  dfs(
+    *start,
+    *end,
+    &mut Vec::new(),
+    &mut visited,
+    &mut paths,
+    &map,
+    &smalls,
+    *start,
+  );
 
   paths.len()
 }
 
-fn part_2(input: &TParsed) -> usize {
-  let mut visited = vec![false; input.len()];
-
-  let lookup = input.iter().map(|(k, _)| *k).collect::<Vec<&str>>();
-  let mut map: Vec<Vec<usize>> = Vec::new();
-
-  for node in lookup.iter() {
-    let nexts = input.get(node).expect("Unable to find next paths");
-
-    map.push(
-      nexts
-        .iter()
-        .map(|s| {
-          lookup
-            .iter()
-            .position(|c| c == s)
-            .expect("Unable to find in lookup")
-        })
-        .collect(),
-    );
-  }
-
-  let smalls = lookup.iter().map(|&c| is_small(c)).collect();
-
-  let start = lookup
-    .iter()
-    .position(|&c| c == "start")
-    .expect("Unable to find start in lookup");
-
-  let end = lookup
-    .iter()
-    .position(|&c| c == "end")
-    .expect("Unable to find end in lookup");
+fn part_2((start, end, map, smalls): &TParsed) -> usize {
+  let mut visited = vec![false; smalls.len()];
 
   fn dfs<'a>(
     u: usize,
@@ -178,15 +157,15 @@ fn part_2(input: &TParsed) -> usize {
   let mut paths = Vec::new();
 
   dfs(
-    start,
-    end,
+    *start,
+    *end,
     false,
     &mut Vec::new(),
     &mut visited,
     &mut paths,
     &map,
     &smalls,
-    start,
+    *start,
   );
 
   paths.sort_unstable();
@@ -209,7 +188,39 @@ fn make_map<'a>(input: Vec<(&'a str, &'a str)>) -> TParsed {
     res.entry(i.1).or_insert(HashSet::new()).insert(i.0);
   }
 
-  res
+  let lookup = res.iter().map(|(k, _)| *k).collect::<Vec<&str>>();
+  let mut map: Vec<Vec<usize>> = Vec::new();
+
+  for node in lookup.iter() {
+    let nexts = res.get(node).expect("Unable to find next paths");
+
+    map.push(
+      nexts
+        .iter()
+        .map(|s| {
+          lookup
+            .iter()
+            .position(|c| c == s)
+            .expect("Unable to find in lookup")
+        })
+        .collect(),
+    );
+  }
+
+  let is_small = |s: &&str| -> bool { s.chars().any(|c| c.is_ascii_lowercase()) };
+  let smalls = lookup.iter().map(is_small).collect();
+
+  let start = lookup
+    .iter()
+    .position(|&c| c == "start")
+    .expect("Unable to find start in lookup");
+
+  let end = lookup
+    .iter()
+    .position(|&c| c == "end")
+    .expect("Unable to find end in lookup");
+
+  (start, end, map, smalls)
 }
 
 fn try_parse<'a>(i: &'a str) -> IResult<&'a str, Vec<(&'a str, &'a str)>> {
