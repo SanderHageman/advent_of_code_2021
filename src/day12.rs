@@ -16,8 +16,6 @@ pub fn day(input: String) -> (usize, usize) {
 }
 
 fn part_1((start, end, map, smalls): &TParsed) -> usize {
-  let mut visited = vec![false; smalls.len()];
-
   fn dfs<'a>(
     u: usize,
     v: usize,
@@ -26,7 +24,6 @@ fn part_1((start, end, map, smalls): &TParsed) -> usize {
     paths: &mut Vec<Vec<usize>>,
     input: &Vec<Vec<usize>>,
     smalls: &Vec<bool>,
-    start_n: usize,
   ) {
     let small = smalls[u];
 
@@ -48,16 +45,7 @@ fn part_1((start, end, map, smalls): &TParsed) -> usize {
 
     let nexts = input.get(u).expect("Unable to find next paths");
     for next in nexts {
-      dfs(
-        *next,
-        v,
-        current_path,
-        visited,
-        paths,
-        input,
-        smalls,
-        start_n,
-      );
+      dfs(*next, v, current_path, visited, paths, input, smalls);
     }
     current_path.pop();
 
@@ -72,19 +60,16 @@ fn part_1((start, end, map, smalls): &TParsed) -> usize {
     *start,
     *end,
     &mut Vec::new(),
-    &mut visited,
+    &mut vec![false; smalls.len()],
     &mut paths,
     &map,
     &smalls,
-    *start,
   );
 
   paths.len()
 }
 
 fn part_2((start, end, map, smalls): &TParsed) -> usize {
-  let mut visited = vec![false; smalls.len()];
-
   fn dfs<'a>(
     u: usize,
     v: usize,
@@ -161,7 +146,7 @@ fn part_2((start, end, map, smalls): &TParsed) -> usize {
     *end,
     false,
     &mut Vec::new(),
-    &mut visited,
+    &mut vec![false; smalls.len()],
     &mut paths,
     &map,
     &smalls,
