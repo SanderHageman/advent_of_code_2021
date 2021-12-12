@@ -73,26 +73,52 @@ fn part_1(input: &TParsed) -> usize {
 }
 
 fn part_2(input: &TParsed) -> usize {
-  let start = "start";
-  let end = "end";
+  let mut visited = vec![false; input.len()];
 
-  let mut visited: HashMap<&str, bool> = input
+  let lookup = input.iter().map(|(k, _)| *k).collect::<Vec<&str>>();
+  let mut map: Vec<Vec<usize>> = Vec::new();
+
+  for node in lookup.iter() {
+    let nexts = input.get(node).expect("Unable to find next paths");
+
+    map.push(
+      nexts
+        .iter()
+        .map(|s| {
+          lookup
+            .iter()
+            .position(|c| c == s)
+            .expect("Unable to find in lookup")
+        })
+        .collect(),
+    );
+  }
+
+  let smalls = lookup.iter().map(|&c| is_small(c)).collect();
+
+  let start = lookup
     .iter()
-    .filter(|(k, _)| is_small(k))
-    .map(|(k, _)| (*k, false))
-    .collect();
+    .position(|&c| c == "start")
+    .expect("Unable to find start in lookup");
+
+  let end = lookup
+    .iter()
+    .position(|&c| c == "end")
+    .expect("Unable to find end in lookup");
 
   fn dfs<'a>(
-    u: &'a str,
-    v: &'a str,
+    u: usize,
+    v: usize,
     visited_twice: bool,
-    current_path: &mut Vec<&'a str>,
-    visited: &mut HashMap<&'a str, bool>,
-    paths: &mut Vec<Vec<&'a str>>,
-    input: &'a TParsed,
+    current_path: &mut Vec<usize>,
+    visited: &mut Vec<bool>,
+    paths: &mut Vec<Vec<usize>>,
+    input: &Vec<Vec<usize>>,
+    smalls: &Vec<bool>,
+    start_n: usize,
   ) {
-    let small = is_small(u);
-    let terminator = u == "start" || u == "end";
+    let small = smalls[u];
+    let terminator = u == start_n || u == v;
     if small && visited[u] {
       return;
     }
@@ -110,7 +136,17 @@ fn part_2(input: &TParsed) -> usize {
 
     if !terminator && small && !visited_twice {
       for next in nexts {
-        dfs(*next, v, true, current_path, visited, paths, input);
+        dfs(
+          *next,
+          v,
+          true,
+          current_path,
+          visited,
+          paths,
+          input,
+          smalls,
+          start_n,
+        );
       }
     }
 
@@ -119,12 +155,22 @@ fn part_2(input: &TParsed) -> usize {
     }
 
     for next in nexts {
-      dfs(*next, v, visited_twice, current_path, visited, paths, input);
+      dfs(
+        *next,
+        v,
+        visited_twice,
+        current_path,
+        visited,
+        paths,
+        input,
+        smalls,
+        start_n,
+      );
     }
 
     current_path.pop();
 
-    if is_small(u) {
+    if small {
       *visited.get_mut(u).expect("small cave not found") = false;
     }
   }
@@ -138,7 +184,9 @@ fn part_2(input: &TParsed) -> usize {
     &mut Vec::new(),
     &mut visited,
     &mut paths,
-    input,
+    &map,
+    &smalls,
+    start,
   );
 
   paths.sort_unstable();
