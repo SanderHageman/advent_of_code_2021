@@ -59,12 +59,13 @@ fn part_2((template, rules): &TParsed) -> usize {
 
   let mut arr = vec![0; 26];
   for (&(c1, c2), n) in pairs.iter() {
-    arr[(c1 as usize) - 65] += n / 2;
-    arr[(c2 as usize) - 65] += n / 2;
+    arr[(c1 as usize) - 65] += n;
+    arr[(c2 as usize) - 65] += n;
   }
 
-  arr[(template[0] as usize) - 65] += 1;
-  arr[(template[template.len() - 1] as usize) - 65] += 1;
+  arr
+    .iter_mut()
+    .for_each(|n| *n = (*n as f64 / 2.0).ceil() as usize);
 
   arr.iter().max().unwrap() - arr.iter().filter(|&&n| n > 0).min().unwrap()
 }
