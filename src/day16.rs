@@ -18,7 +18,29 @@ impl Packet {
   fn get_v_sum(&self) -> usize {
     match self {
       Packet::Lit((v, _), _) => *v,
-      Packet::Op((v, _), sub) => v + sub.iter().map(|p| p.get_v_sum()).sum::<usize>(),
+      Packet::Op((v, _), sub) => sub.iter().fold(*v, |r, x| r + x.get_v_sum()),
+    }
+  }
+
+  fn value(&self) -> usize {
+    match self {
+      Packet::Lit((_, _), value) => *value,
+      Packet::Op((_, t), sub) => match t {
+        0 => sub.iter().fold(0usize, |r, x| r + x.value()),
+        1 => sub.iter().fold(1usize, |r, x| r * x.value()),
+        2 => sub.iter().map(|x| x.value()).min().unwrap(),
+        3 => sub.iter().map(|x| x.value()).max().unwrap(),
+        c => {
+          let l = sub[0].value();
+          let r = sub[1].value();
+          match c {
+            5 => (l > r) as usize * 1,
+            6 => (l < r) as usize * 1,
+            7 => (l == r) as usize * 1,
+            _ => panic!("uncovered"),
+          }
+        }
+      },
     }
   }
 }
@@ -39,7 +61,7 @@ fn part_1(input: &TParsed) -> usize {
 }
 
 fn part_2(input: &TParsed) -> usize {
-  0
+  input.value()
 }
 
 fn parse<'a>(input: &'a str) -> TParsed {
@@ -93,7 +115,9 @@ fn parse_op_0<'a>(i: PType<'a>) -> IResult<PType<'a>, Vec<Packet>> {
 
   let (i, yeet): (_, u8) = take(rest)(i)?;
 
-  new_bytes.push(yeet << (8 - rest));
+  if rest > 0 {
+    new_bytes.push(yeet << (8 - rest));
+  }
 
   let (_, p) = many0(parse_packet)((&new_bytes, 0)).expect("unable to parse subpackets");
 
@@ -136,9 +160,9 @@ fn test_example_1_16() {
 
 #[test]
 fn test_example_2_16() {
-  for e in EXAMPLE_INPUT {
+  for e in EXAMPLE_INPUT2 {
     let input = parse(e.0);
-    assert_eq!(part_1(&input), e.1)
+    assert_eq!(part_2(&input), e.1)
   }
 }
 
@@ -148,4 +172,16 @@ const EXAMPLE_INPUT: [(&str, usize); 4] = [
   ("620080001611562C8802118E34", 12),
   ("C0015000016115A2E0802F182340", 23),
   ("A0016C880162017C3686B18A3D4780", 31),
+];
+
+#[cfg(test)]
+const EXAMPLE_INPUT2: [(&str, usize); 8] = [
+  ("C200B40A82", 3),
+  ("04005AC33890", 54),
+  ("880086C3E88112", 7),
+  ("CE00C43D881120", 9),
+  ("D8005AC2A8F0", 1),
+  ("F600BC2D8F", 0),
+  ("9C005AC2F8F0", 0),
+  ("9C0141080250320F1802104A08", 1),
 ];
