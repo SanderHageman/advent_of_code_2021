@@ -7,13 +7,9 @@ use nom::sequence::delimited;
 use nom::sequence::pair;
 use nom::{combinator::*, multi::separated_list1, IResult};
 use priority_queue::PriorityQueue;
-use std::cmp::Reverse;
 use std::collections::HashSet;
-use std::hash::Hash;
-use std::hash::Hasher;
 use std::iter;
 use vek::mat::Mat4;
-use vek::vec::Vec3;
 use vek::vec::Vec4;
 
 type TParsed = Vec<TParsedSub>;
@@ -25,47 +21,21 @@ type TN = f64;
 
 pub fn day<'a>(input: String) -> (usize, usize) {
   let parsed_input = parse(&input);
-  let p1 = part_1(&parsed_input);
-  let p2 = part_2(&parsed_input);
+  let (p1, sensor_locs) = part_1(&parsed_input);
+  let p2 = part_2(&sensor_locs);
   (p1, p2)
 }
 
-fn get_mat(i: usize) -> TMat {
-  let yrot = ((i % 4) * 90) as f64;
-  let zrot = (if i < 16 { i / 4 } else { 0 } * 90) as f64;
-  let xrot = (if i >= 16 {
-    if i < 20 {
-      1
-    } else {
-      3
-    }
-  } else {
-    0
-  } * 90) as f64;
-
-  TMat::rotation_x(xrot.to_radians())
-    * TMat::rotation_z(zrot.to_radians())
-    * TMat::rotation_y(yrot.to_radians())
-}
-
-fn get_mats() -> [TMat; 24] {
-  let mut res = [TMat::zero(); 24];
-  for i in 0..24 {
-    res[i] = get_mat(i);
-  }
-  res
-}
-
-fn part_1(input: &TParsed) -> usize {
+fn part_1(input: &TParsed) -> (usize, Vec<IVec>) {
   let mut space = HashSet::with_capacity(500);
   space.extend(input[0].iter().map(|v| v.as_()));
 
-  let mats = get_mats();
   let mut find = PriorityQueue::<_, _>::from_iter((1..input.len()).zip(iter::repeat(u16::MAX)));
 
   let sensors: Vec<Vec<HashSet<IVec>>> = input
     .iter()
     .map(|s| {
+      let mats = get_mats();
       (0..24)
         .map(|i| {
           s.iter()
@@ -76,9 +46,9 @@ fn part_1(input: &TParsed) -> usize {
     })
     .collect();
 
-  while let Some((input_i, old_prio)) = find.pop() {
-    println!("Searching for {} scanners...", find.len());
+  let mut sensor_locs: Vec<IVec> = vec![IVec::zero()];
 
+  while let Some((input_i, old_prio)) = find.pop() {
     let mut res = HashSet::with_capacity(15);
 
     'outer: for s in &space {
@@ -93,11 +63,12 @@ fn part_1(input: &TParsed) -> usize {
 
           res.extend(beacons);
 
-          if res.len() <= 15 {
+          if other.len() - res.len() >= 12 {
+            sensor_locs.push(origin_o);
             break 'outer;
-          } else {
-            res.clear();
           }
+
+          res.clear();
         }
       }
     }
@@ -106,16 +77,46 @@ fn part_1(input: &TParsed) -> usize {
         space.insert(r);
       }
     } else {
-      assert_ne!(find.len(), 1);
       find.push(input_i, old_prio - 1);
     }
   }
 
-  space.len()
+  (space.len(), sensor_locs)
 }
 
-fn part_2(input: &TParsed) -> usize {
-  0
+fn part_2(input: &Vec<IVec>) -> usize {
+  input
+    .iter()
+    .tuple_combinations()
+    .map(|(l, r)| (l - r).iter().map(|v| v.abs() as usize).sum())
+    .max()
+    .unwrap()
+}
+
+fn get_mats() -> [TMat; 24] {
+  fn get_mat(i: usize) -> TMat {
+    let yrot = ((i % 4) * 90) as f64;
+    let zrot = (if i < 16 { i / 4 } else { 0 } * 90) as f64;
+    let xrot = (if i >= 16 {
+      if i < 20 {
+        1
+      } else {
+        3
+      }
+    } else {
+      0
+    } * 90) as f64;
+
+    TMat::rotation_x(xrot.to_radians())
+      * TMat::rotation_z(zrot.to_radians())
+      * TMat::rotation_y(yrot.to_radians())
+  }
+
+  let mut res = [TMat::zero(); 24];
+  for i in 0..24 {
+    res[i] = get_mat(i);
+  }
+  res
 }
 
 #[test]
@@ -129,13 +130,13 @@ fn show_parse_19() {
 #[test]
 fn test_example_1_19() {
   let input = parse(EXAMPLE_INPUT);
-  assert_eq!(part_1(&input), 79)
+  assert_eq!(part_1(&input).0, 79)
 }
 
 #[test]
 fn test_example_2_19() {
   let input = parse(EXAMPLE_INPUT);
-  assert_eq!(part_2(&input), 3993)
+  assert_eq!(part_2(&part_1(&input).1), 3621)
 }
 
 fn parse<'a>(input: &'a str) -> TParsed {
