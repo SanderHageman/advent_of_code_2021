@@ -63,28 +63,40 @@ fn part_1(input: &TParsed) -> usize {
   let mats = get_mats();
   let mut find = PriorityQueue::<_, _>::from_iter((1..input.len()).zip(iter::repeat(u16::MAX)));
 
+  let sensors: Vec<Vec<HashSet<IVec>>> = input
+    .iter()
+    .map(|s| {
+      (0..24)
+        .map(|i| {
+          s.iter()
+            .map(move |o| (*o * mats[i]).round().as_())
+            .collect()
+        })
+        .collect()
+    })
+    .collect();
+
   while let Some((input_i, old_prio)) = find.pop() {
     println!("Searching for {} scanners...", find.len());
 
-    let other = &input[input_i];
     let mut res = HashSet::with_capacity(15);
 
     'outer: for s in &space {
-      for i in 0..24 {
-        let mat = mats[i];
-        for anchor in other {
-          let origin_o = *s - (*anchor * mat).round().as_();
+      for other in &sensors[input_i] {
+        for test_anchor in other {
+          let origin_o: IVec = *s - test_anchor;
 
           let beacons = other
             .iter()
-            .map(|o| (*o * mat).round().as_() + origin_o)
-            .collect::<HashSet<IVec>>();
+            .map(|o| o + origin_o)
+            .filter(|o| !space.contains(o));
 
-          let overlapping: HashSet<IVec> = beacons.intersection(&space).cloned().collect();
+          res.extend(beacons);
 
-          if overlapping.len() >= 12 {
-            res.extend(beacons.difference(&overlapping));
+          if res.len() <= 15 {
             break 'outer;
+          } else {
+            res.clear();
           }
         }
       }
