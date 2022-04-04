@@ -6,9 +6,12 @@ use nom::character::complete::newline;
 use nom::sequence::delimited;
 use nom::sequence::pair;
 use nom::{combinator::*, multi::separated_list1, IResult};
+use priority_queue::PriorityQueue;
+use std::cmp::Reverse;
 use std::collections::HashSet;
 use std::hash::Hash;
 use std::hash::Hasher;
+use std::iter;
 use vek::mat::Mat4;
 use vek::vec::Vec3;
 use vek::vec::Vec4;
@@ -16,6 +19,7 @@ use vek::vec::Vec4;
 type TParsed = Vec<TParsedSub>;
 type TParsedSub = Vec<TVec>;
 type TVec = Vec4<TN>;
+type IVec = Vec4<i64>;
 type TMat = Mat4<TN>;
 type TN = f64;
 
@@ -53,50 +57,45 @@ fn get_mats() -> [TMat; 24] {
 }
 
 fn part_1(input: &TParsed) -> usize {
-  println!("Searching for {} scanners...", res.len());
+  let mut space = HashSet::with_capacity(500);
+  space.extend(input[0].iter().map(|v| v.as_()));
 
-  let mut space = input[0].to_owned();
   let mats = get_mats();
+  let mut find = PriorityQueue::<_, _>::from_iter((1..input.len()).zip(iter::repeat(u16::MAX)));
 
-  let mut find = (1..input.len()).collect::<Vec<usize>>();
+  while let Some((input_i, old_prio)) = find.pop() {
+    println!("Searching for {} scanners...", find.len());
 
-  while find.len() > 0 {
-    let other = &input[find[0]];
-    let mut res = vec![];
+    let other = &input[input_i];
+    let mut res = HashSet::with_capacity(15);
+
     'outer: for s in &space {
       for i in 0..24 {
         let mat = mats[i];
         for anchor in other {
-          let origin_o = (s - (*anchor * mat)).round();
-          let overlap_beacons = other
-            .iter()
-            .map(|o| (*o * mat).round())
-            .filter(|o| space.iter().any(|q| ((q - o) - origin_o).is_approx_zero()))
-            .collect::<Vec<_>>();
+          let origin_o = *s - (*anchor * mat).round().as_();
 
-          if overlap_beacons.len() >= 12 {
-            res.extend(
-              other
-                .iter()
-                .map(|o| (*o * mat).round())
-                .filter(|o| !overlap_beacons.contains(o))
-                .map(|o| origin_o + o),
-            );
+          let beacons = other
+            .iter()
+            .map(|o| (*o * mat).round().as_() + origin_o)
+            .collect::<HashSet<IVec>>();
+
+          let overlapping: HashSet<IVec> = beacons.intersection(&space).cloned().collect();
+
+          if overlapping.len() >= 12 {
+            res.extend(beacons.difference(&overlapping));
             break 'outer;
           }
         }
       }
     }
     if res.len() > 0 {
-      space.append(&mut res);
-      find.remove(0);
+      for r in res {
+        space.insert(r);
+      }
     } else {
       assert_ne!(find.len(), 1);
-      let last = find[find.len() - 1];
-      for i in (1..find.len()).rev() {
-        find[i] = find[i - 1];
-      }
-      find[0] = last;
+      find.push(input_i, old_prio - 1);
     }
   }
 
@@ -105,6 +104,26 @@ fn part_1(input: &TParsed) -> usize {
 
 fn part_2(input: &TParsed) -> usize {
   0
+}
+
+#[test]
+fn show_parse_19() {
+  let input = parse(EXAMPLE_INPUT);
+  for ln in input {
+    println!("{:?}", ln);
+  }
+}
+
+#[test]
+fn test_example_1_19() {
+  let input = parse(EXAMPLE_INPUT);
+  assert_eq!(part_1(&input), 79)
+}
+
+#[test]
+fn test_example_2_19() {
+  let input = parse(EXAMPLE_INPUT);
+  assert_eq!(part_2(&input), 3993)
 }
 
 fn parse<'a>(input: &'a str) -> TParsed {
@@ -134,26 +153,6 @@ where
   A: std::str::FromStr,
 {
   map_res(take_till(|c| c == ',' || c == '\n'), |x: &str| x.parse())(i)
-}
-
-#[test]
-fn show_parse_19() {
-  let input = parse(EXAMPLE_INPUT);
-  for ln in input {
-    println!("{:?}", ln);
-  }
-}
-
-#[test]
-fn test_example_1_19() {
-  let input = parse(EXAMPLE_INPUT);
-  assert_eq!(part_1(&input), 79)
-}
-
-#[test]
-fn test_example_2_19() {
-  let input = parse(EXAMPLE_INPUT);
-  assert_eq!(part_2(&input), 3993)
 }
 
 #[cfg(test)]
