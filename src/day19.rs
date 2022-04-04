@@ -1,3 +1,4 @@
+use itertools::Itertools;
 use nom::bytes::complete::tag;
 use nom::bytes::complete::take_till;
 use nom::character::complete::digit1;
@@ -5,11 +6,16 @@ use nom::character::complete::newline;
 use nom::sequence::delimited;
 use nom::sequence::pair;
 use nom::{combinator::*, multi::separated_list1, IResult};
+use std::collections::HashSet;
+use vek::mat::Mat4;
 use vek::vec::Vec3;
+use vek::vec::Vec4;
 
 type TParsed = Vec<TParsedSub>;
 type TParsedSub = Vec<TVec>;
-type TVec = Vec3<isize>;
+type TVec = Vec4<TN>;
+type TMat = Mat4<TN>;
+type TN = f64;
 
 pub fn day<'a>(input: String) -> (usize, usize) {
   let parsed_input = parse(&input);
@@ -24,6 +30,49 @@ fn part_1(input: &TParsed) -> usize {
 
 fn part_2(input: &TParsed) -> usize {
   0
+}
+
+fn to24(v: TVec) -> [TVec; 24] {
+  let deg = 90.0_f64.to_radians();
+
+  let x_rot = TMat::rotation_x(deg);
+  let y_rot = TMat::rotation_y(deg);
+  let z_rot = TMat::rotation_z(deg);
+
+  let mut res = [v; 24];
+
+  for i in 0..24 {
+    res[i] = res[i] * TMat::rotation_y(deg * (i / 4) as f64);
+    res[i] = res[i] * TMat::rotation_z(deg * (i % 4) as f64);
+  }
+
+  res
+}
+
+fn yeet(sensor: &TParsedSub) -> HashSet<u64> {
+  let mut ye = HashSet::new();
+
+  // let mut ye = vec![];
+
+  for v in sensor.iter().combinations(3) {
+    let a = (v[0] - v[1]).magnitude();
+    let b = (v[1] - v[2]).magnitude();
+    let c = (v[2] - v[0]).magnitude();
+    ye.insert(heron(a, b, c).round() as u64);
+  }
+
+  ye
+}
+
+fn heron(a: f64, b: f64, c: f64) -> f64 {
+  let asq = a * a;
+  let bsq = b * b;
+  let csq = c * c;
+
+  let mut sum = asq + bsq - csq;
+  sum *= sum;
+
+  0.25_f64 * (4f64 * asq * bsq - sum).sqrt()
 }
 
 fn parse<'a>(input: &'a str) -> TParsed {
@@ -44,7 +93,7 @@ fn parse_scanner<'a>(i: &'a str) -> IResult<&'a str, TParsedSub> {
 
 fn parse_vec3<'a>(i: &'a str) -> IResult<&'a str, TVec> {
   map(separated_list1(tag(","), get_dig_n), |v| {
-    TVec::new(v[0], v[1], v[2])
+    TVec::new(v[0], v[1], v[2], 0 as TN)
   })(i)
 }
 
@@ -55,6 +104,20 @@ where
   map_res(take_till(|c| c == ',' || c == '\n'), |x: &str| x.parse())(i)
 }
 
+#[test]
+fn show_pp() {
+  let input = parse(EXAMPLE_INPUT);
+  let pp: Vec<_> = input.iter().map(|y| yeet(y)).collect();
+
+  // let mut h: HashSet<u64> = HashSet::new();
+  // for c in pp.iter().combinations(2) {
+  //   h.extend(c[0].intersection(c[1]));
+  // }
+  println!("{}", pp[0].len());
+
+  println!("{}", pp[0].intersection(&pp[1]).count());
+  // println!("{}", h.iter().count());
+}
 #[test]
 fn show_parse_19() {
   let input = parse(EXAMPLE_INPUT);
