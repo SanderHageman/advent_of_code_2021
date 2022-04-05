@@ -26,6 +26,19 @@ pub fn day<'a>(input: String) -> (usize, usize) {
   (p1, p2)
 }
 
+fn vabs(v: IVec) -> i64 {
+  v.iter().map(|x| x.abs()).sum()
+}
+
+fn vamax(v: IVec) -> i64 {
+  v.iter().map(|x| x.abs()).max().unwrap()
+}
+
+fn make_abst(l: IVec, r: IVec) -> (i64, i64) {
+  let a = l - r;
+  (vabs(a), vamax(a))
+}
+
 fn part_1(input: &TParsed) -> (usize, Vec<IVec>) {
   let mut space = HashSet::with_capacity(500);
   space.extend(input[0].iter().map(|v| v.as_()));
