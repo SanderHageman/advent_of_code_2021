@@ -1,3 +1,4 @@
+use hashbrown::{HashMap, HashSet};
 use itertools::Itertools;
 use nom::bytes::complete::tag;
 use nom::bytes::complete::take_till;
@@ -7,7 +8,6 @@ use nom::sequence::delimited;
 use nom::sequence::pair;
 use nom::{combinator::*, multi::separated_list1, IResult};
 use priority_queue::PriorityQueue;
-use std::collections::{HashMap, HashSet};
 use std::iter;
 use vek::mat::Mat4;
 use vek::vec::Vec4;
