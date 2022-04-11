@@ -39,7 +39,7 @@ fn make_abst((l, r): (IVec, IVec)) -> (i64, i64) {
   (vabs(a), vamax(a))
 }
 
-fn dothing(input: &TParsed) {
+fn dothing(input: &TParsed) -> HashMap<(i64, i64), (IVec, IVec)> {
   let i_sensors = input
     .iter()
     .map(|v| v.iter().map(|v| v.as_()).collect::<Vec<_>>())
