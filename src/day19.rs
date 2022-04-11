@@ -7,7 +7,7 @@ use nom::sequence::delimited;
 use nom::sequence::pair;
 use nom::{combinator::*, multi::separated_list1, IResult};
 use priority_queue::PriorityQueue;
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 use std::iter;
 use vek::mat::Mat4;
 use vek::vec::Vec4;
@@ -34,9 +34,24 @@ fn vamax(v: IVec) -> i64 {
   v.iter().map(|x| x.abs()).max().unwrap()
 }
 
-fn make_abst(l: IVec, r: IVec) -> (i64, i64) {
+fn make_abst((l, r): (IVec, IVec)) -> (i64, i64) {
   let a = l - r;
   (vabs(a), vamax(a))
+}
+
+fn dothing(input: &TParsed) {
+  let i_sensors = input
+    .iter()
+    .map(|v| v.iter().map(|v| v.as_()).collect::<Vec<_>>())
+    .collect::<Vec<_>>();
+  let mut yee = HashMap::new();
+  for sensor in i_sensors {
+    for t in sensor.iter().cloned().tuple_combinations() {
+      yee.insert(make_abst(t), t);
+    }
+  }
+
+  yee
 }
 
 fn part_1(input: &TParsed) -> (usize, Vec<IVec>) {
