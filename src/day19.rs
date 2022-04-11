@@ -26,32 +26,75 @@ pub fn day<'a>(input: String) -> (usize, usize) {
   (p1, p2)
 }
 
-fn vabs(v: IVec) -> i64 {
-  v.iter().map(|x| x.abs()).sum()
-}
-
-fn vamax(v: IVec) -> i64 {
-  v.iter().map(|x| x.abs()).max().unwrap()
-}
-
 fn make_abst((l, r): (IVec, IVec)) -> (i64, i64) {
+  fn vabs(v: IVec) -> i64 {
+    v.iter().map(|x| x.abs()).sum()
+  }
+
+  fn vamax(v: IVec) -> i64 {
+    v.iter().map(|x| x.abs()).max().unwrap()
+  }
+
   let a = l - r;
   (vabs(a), vamax(a))
 }
 
-fn dothing(input: &TParsed) -> HashMap<(i64, i64), (IVec, IVec)> {
+fn hash_combs(input: &TParsed) -> Vec<HashMap<(i64, i64), (IVec, IVec)>> {
   let i_sensors = input
     .iter()
     .map(|v| v.iter().map(|v| v.as_()).collect::<Vec<_>>())
     .collect::<Vec<_>>();
-  let mut yee = HashMap::new();
-  for sensor in i_sensors {
+  let mut yee = vec![HashMap::new(); input.len()];
+  for (i, sensor) in i_sensors.iter().enumerate() {
     for t in sensor.iter().cloned().tuple_combinations() {
-      yee.insert(make_abst(t), t);
+      yee[i].insert(make_abst(t), t);
     }
   }
 
   yee
+}
+
+fn pp_1(input: &TParsed) -> (usize, Vec<IVec>) {
+  // match 12Choose2 = 66
+  let yee = hash_combs(input);
+  let mut space = HashMap::<_, _>::from_iter(yee[0]);
+
+  let mut find = PriorityQueue::<_, _>::from_iter((1..input.len()).zip(iter::repeat(u16::MAX)));
+
+  // while let Some((input_i, old_prio)) = find.pop() {
+  //   let a =
+
+  //   'outer: for s in &space {
+  //     for other in &sensors[input_i] {
+  //       for test_anchor in other {
+  //         let origin_o: IVec = *s - test_anchor;
+
+  //         let beacons = other
+  //           .iter()
+  //           .map(|o| o + origin_o)
+  //           .filter(|o| !space.contains(o));
+
+  //         res.extend(beacons);
+
+  //         if other.len() - res.len() >= 12 {
+  //           sensor_locs.push(origin_o);
+  //           break 'outer;
+  //         }
+
+  //         res.clear();
+  //       }
+  //     }
+  //   }
+  //   if res.len() > 0 {
+  //     for r in res {
+  //       space.insert(r);
+  //     }
+  //   } else {
+  //     find.push(input_i, old_prio - 1);
+  //   }
+  // }
+
+  (0, vec![])
 }
 
 fn part_1(input: &TParsed) -> (usize, Vec<IVec>) {
@@ -158,7 +201,7 @@ fn show_parse_19() {
 #[test]
 fn test_example_1_19() {
   let input = parse(EXAMPLE_INPUT);
-  assert_eq!(part_1(&input).0, 79)
+  assert_eq!(pp_1(&input).0, 79)
 }
 
 #[test]
